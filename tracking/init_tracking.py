@@ -11,9 +11,11 @@ import time
 from datetime import datetime
 import serial
 import minimalmodbus
-from coarse_tracking_R2 import coarse_tracking
+from coarse_tracking import coarse_tracking
 
 user=os.getenv('username')
+base_dir = 'Q:/git_repos/GLO/tracking/'
+date=datetime.fromtimestamp(time.time()).strftime('%Y%m%d')
 
 #set length of pause between pyautogui function calls
 pyautogui.PAUSE = .5
@@ -126,7 +128,7 @@ def init_dataframe():
 
 def init_shutter(com_port='COM10',
                  baudrate=115200,
-                 data_loc = 'C:/Balloon/sensor_testing/20171109/',
+                 data_loc = base_dir+'data/'+date,
                  shutter_ctl = '20171109_shutter_ctl.txt'):
     
     
@@ -141,6 +143,7 @@ def init_shutter(com_port='COM10',
     ser.isOpen()
     
     #check to see if a shutter control file exists, if not, then create one
+    
     if os.path.isfile(data_loc + shutter_ctl) == False:
         try:
             open(data_loc + shutter_ctl, 'a')
@@ -157,8 +160,8 @@ def close_shutter(ser):
     ser.write('2'.encode())
     print('closing shutter',datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
     
-def init_ccd_com_port(icon_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/image_capture/icons/',
-                      button_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/image_capture/buttons/'):
+def init_ccd_com_port(icon_dir=base_dir+'image_capture/icons/',
+                      button_dir=base_dir+'image_capture/buttons/'):
     
     print('Creating com port 2 for CCD')
     
@@ -171,8 +174,8 @@ def init_ccd_com_port(icon_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking
     
     #need to add click minimize
     
-def init_ccd_driver(icon_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/image_capture/icons/',
-                      button_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/image_capture/buttons/'):
+def init_ccd_driver(icon_dir=base_dir+'image_capture/icons/',
+                      button_dir=base_dir+'image_capture/buttons/'):
 
     print('Setting up driver for CCD')
     
@@ -217,8 +220,8 @@ def init_ccd_driver(icon_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/i
     
     
 
-def open_framelink(icon_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/image_capture/icons/',
-                      button_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/image_capture/buttons/'):
+def open_framelink(icon_dir=base_dir+'image_capture/icons/',
+                      button_dir=base_dir+'image_capture/buttons/'):
     
     print('Opening Framelink Express')
     
@@ -226,8 +229,8 @@ def open_framelink(icon_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/im
     pyautogui.click(x, y)
 
 def capture_image(frames=5,
-                  icon_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/image_capture/icons/',
-                  button_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/image_capture/buttons/'):
+                  icon_dir=base_dir+'image_capture/icons/',
+                  button_dir=base_dir+'image_capture/buttons/'):
     
     x, y = pyautogui.locateCenterOnScreen(icon_dir+'framelink_selected.PNG',region=(0,728,1022,767))
     pyautogui.click(x, y)
@@ -293,14 +296,29 @@ def init_sun_sensor(com_port='COM10',
     
 def save_data(data,
               track,
-              loc='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/PID/',
+              loc=base_dir+'data/'+date,
               rev=''):
     data.to_csv(loc+'_PID_testing_'+rev+'_instr_'+track+'.txt')
 
 #in the future, can have this load a parameter file that can be changed in real-time
 def gen_params():
     
-    date=datetime.fromtimestamp(time.time()).strftime('%Y%m%d')
+    #check to see if data directory for today exists, if not then create one
+    if not os.path.exists(base_dir+'data/'+date+'/'):
+        os.makedirs(base_dir+'data/'+date+'/')
+    
+
+    
+    save_images = input(">> do you want to save GLO images?:\n"+
+               "0: I don't wanna save the images\n"+
+               "1: I would love to save some images\n"+
+                "    in the default C:/todays_date location\n"+
+                ">>")
+    
+    if save_images == 1:
+        #check to see if image directory for today exists, if not then create one
+        if not os.path.exists('C:/'+date+'/'):
+            os.makedirs('C:/'+date+'/')
     
     #camera params
     interval=60
@@ -324,14 +342,14 @@ def gen_params():
 
     
     #PyautoGUI params
-    icon_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/image_capture/icons/'
-    button_dir='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/image_capture/buttons/'
+    icon_dir=base_dir+'image_capture/icons/'
+    button_dir=base_dir+'image_capture/buttons/'
     
     #shutter params
     shut_com = 'COM9'
     shut_baud = 115200
-    shut_data_loc = 'Q:/Users/GLOtastic/Desktop/Python/solar_tracking/testing/'+date+'/'
-    shut_ctl = date+'/'+'_shutter_ctl.txt'
+    shut_data_loc = base_dir+'data/'+date+'/'
+    shut_ctl = date+'_shutter_ctl.txt'
     
     #Sun sensor params
     sun_com = 'COM10'
@@ -364,7 +382,7 @@ def gen_params():
         
     #save data params
     #data_loc='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/testing/'+date+'/'+date
-    data_loc='C:/'+date+'/'
+    data_loc=base_dir+date+'/'
     data_rev='R0'
         
     return {'interval':interval,
@@ -406,14 +424,14 @@ def gen_params():
             'icon_dir':icon_dir,
             'button_dir':button_dir}
 
-def load_params(param_dtype_loc='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/params_dtype.txt',
-                param_loc='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/params.txt'):
+def load_params(param_dtype_loc=base_dir+'params_dtype.txt',
+                param_loc=base_dir+'params.txt'):
     #params_dtype = dict(pd.Series.from_csv(param_dtype_loc))
     params = pd.Series.from_csv(param_loc)
     return params
 
 def save_params(params,
-                save_param_loc='Q:/Users/GLOtastic/Desktop/Python/solar_tracking/'):
+                save_param_loc=base_dir):
     pd.Series(params).to_csv(save_param_loc+'params.txt')
     return
 
@@ -483,8 +501,8 @@ while 1:
 #        open_shutter(ser)
 #        capture_image(frames=params['im_exps'])
 #        close_shutter(ser)
-#        save_data(data,
-#                  params['track'],
-#                  params['data_loc'],
-#                  params['data_rev'])
+    save_data(data,
+              params['track'],
+              params['data_loc'],
+              params['data_rev'])
     
