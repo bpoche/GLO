@@ -15,14 +15,27 @@ import minimalmodbus
 import time
 import threading
 import os
+import natsort
+from glob import glob
 
 user=os.getenv('username')
 base_dir = 'Q:/git_repos/GLO/tracking/'
 date=datetime.fromtimestamp(time.time()).strftime('%Y%m%d')
 
-#check to see if director for today exists, if not then create one
+#check to see if any runs are already stored in todays directory
+runs = glob(base_dir+'data/'+date+'/run_*')
+if len(runs) == 0:
+    os.makedirs(base_dir+'data/'+date+'/run_0/')
+if len(runs) >= 1:
+    run_num=int(runs[-1].split('run_')[-1])+1
+    os.makedirs(base_dir+'data/'+date+'/run_'+str(run_num)+'/')
+    
+    
+
+#check to see if directory for today exists, if not then create one
 if not os.path.exists(base_dir+'data/'+date+'/'):
     os.makedirs(base_dir+'data/'+date+'/')
+
 
 def init_sun_sensor(com_port='COM10',
                       instr='all',
@@ -101,9 +114,13 @@ data = pd.DataFrame(columns=['angle_x_filter_R',
 cnt=0
 t0 = int(time.time())
 def read_data(cnt,t0,t_sleep=0.02):
+    '''
+    cnt: counter to label files
+    t_sleep is a delay (in seconds) to wait before polling each successive sensor
+    '''
     #time.sleep(.02)
     t1 = int(time.time())
-    if (t1-t0) >= 5:
+    if (t1-t0) >= 10:
         data.to_csv(base_dir+'data/'+date+'/sun_sensor_'+str(cnt)+'.csv',
                     index_label='time')
         cnt+=1
@@ -198,18 +215,6 @@ def read_data(cnt,t0,t_sleep=0.02):
         temp_L = np.nan  
         watts_L = np.nan
     
-#    angle_x_ref = sp_x
-#    angle_y_ref = sp_y
-#    
-#    angle_x_off_R = angle_x_ref - angle_x_filter_R
-#    angle_y_off_R = angle_y_ref - angle_y_filter_R
-#    
-#    angle_x_off_M = angle_x_ref - angle_x_filter_M
-#    angle_y_off_M = angle_y_ref - angle_y_filter_M
-#    
-#    angle_x_off_L = angle_x_ref - angle_x_filter_L
-#    angle_y_off_L = angle_y_ref - angle_y_filter_L
-    
     data_add = [angle_x_filter_R,
                 angle_x_filter_L,
                 angle_x_filter_M,
@@ -230,8 +235,9 @@ def read_data(cnt,t0,t_sleep=0.02):
                 temp_M]
     
     data.loc[datetime.now()] = data_add
-    
+    print(data.index[-1],'ang_x_R = ',data.angle_x_filter_R[-1],' deg')
     threading.Timer(0.1,read_data(cnt,t0,t_sleep=0.02)).start()
+    
     
 read_data(cnt,t0,t_sleep=0.02)
 #    print('')
@@ -240,7 +246,7 @@ read_data(cnt,t0,t_sleep=0.02)
 #    print('sp_y = ',sp_y)
 #    print('ang_x_offset = ',sp_x-fb_x)
 #    print('ang_y_offset = ',sp_y-fb_y)
-#    print('ang_x_R = ',data.angle_x_filter_R[-1],' deg')
+print('ang_x_R = ',data.angle_x_filter_R[-1],' deg')
 #    print('ang_y_R = ',data.angle_y_filter_R[-1],' deg')
 #    print('ang_x_M = ',data.angle_x_filter_M[-1],' deg')
 #    print('ang_y_M = ',data.angle_y_filter_M[-1],' deg')
