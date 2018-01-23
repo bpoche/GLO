@@ -104,7 +104,8 @@ def read_data(cnt,t0,t_sleep=0.02):
     #time.sleep(.02)
     t1 = int(time.time())
     if (t1-t0) >= 5:
-        data.to_csv(base_dir+'data/'+date+'/sun_sensor_'+str(cnt)+'.csv')
+        data.to_csv(base_dir+'data/'+date+'/sun_sensor_'+str(cnt)+'.csv',
+                    index_label='time')
         cnt+=1
         t0 = t1
     
