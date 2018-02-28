@@ -1,0 +1,6 @@
+SE,		#begin (enable) stabilzized mode
+SGC,		#Calibrate stabilized mode
+DS,		#Save the results
+SCPKP16.000000,	#Set the pan axis proportional gain to 16
+SCPTP16.000000,	#Set the pan axis proportional gain to 16
+	 
