@@ -1,0 +1,5 @@
+delay,ptu_ebay_cmd,ptu_d48_cmd
+0.00,'i','i'
+0.10,'cv','cv'
+1.00,'ps50','ps-50'
+10.00,'ps0','ps0'
