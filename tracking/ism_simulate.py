@@ -426,7 +426,7 @@ if __name__ == '__main__':
     imu_record.join()
     ptu_ebay.join()
     exit()
-    print('are we at the end?')
+
 ##    print('path to save',params.save_loc+file_prefix.split('.csv')[0]+'_vid_filenames.txt')
 ##    with open(params.save_loc+file_prefix.split('.csv')[0]+'_vid_filenames.txt','w') as f:
 ##        print('list: ',video_filenames)
