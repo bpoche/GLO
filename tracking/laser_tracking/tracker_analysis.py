@@ -58,7 +58,8 @@ xpos=data.laser_cen_x.to_frame()*med_dpp
 time=data.time_elapsed.to_frame()/1e3
 
 plt.figure("Raw GLO relative pixel position for ISM errors",clear=True,)
-plt.plot(time,xpos/2.5e-3,marker='.',markersize=1,color='black',linestyle="None")
+plt.plot(time,xpos/2.5e-3,marker='.',markersize=1,color='black',
+         linestyle="None")
 plt.xlabel('Time (s)')
 plt.ylabel('Pixel')
 plt.grid()
@@ -68,7 +69,8 @@ std_xpos_020=xpos.rolling(20,center=True).std()
 
 fig3=plt.figure("Glo sun position cloud width per stacked frame",clear=True)
 #plt3=plt.plot(time,std_xpos_120,color='black')
-plt3=plt.plot(time,std_xpos_020*2e0/2.5e-3,color='black',marker='.',markersize=1,linestyle="None")
+plt3=plt.plot(time,std_xpos_020*2e0/2.5e-3,color='black',marker='.',
+              markersize=1,linestyle="None")
 plt.grid()
 #plt.ylim(-1,1)
 plt.xlabel('Time (s)')
