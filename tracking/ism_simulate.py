@@ -63,7 +63,11 @@ def stop_video(save_loc):
 
 
 def rec_imu(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger):
-    
+    '''
+    1)Open IMU VN100 com port
+    2)Start reading/storing imu data in pandas dataframe
+    3)Once loop_trigger changes from 1->0, stop recording, save to file
+    '''  
     try:
         ser = serial.Serial(
             port=imu_com_port,
@@ -74,9 +78,8 @@ def rec_imu(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger):
     if ser.isOpen():
         print('Connected to VectorNav VN100')
     else:
-        print('Houston the VectorNAv com port aint workin')
+        print('Houston the VectorNav com port aint workin')
     t0 = time.time()
-    #data=[]
     data = pd.DataFrame(columns=['elasped',
                                  'yaw',
                                  'pitch',
@@ -90,13 +93,8 @@ def rec_imu(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger):
                                  'ang_x',
                                  'ang_y',
                                  'ang_z'])
-    #test=True
-    #while ~run2.empty():
     while loop_trigger.value==1:
-        #print('run=',run2)
-        #print('testloop=',test.value)
         t1=time.time()
-        #print(t1)
         line=ser.readline().decode().split(',')
         try:
             yaw = float(line[1])
@@ -141,7 +139,6 @@ def rec_imu(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger):
     data.to_csv(save_loc+'vn100_'+file_prefix+'.csv',
                 index_label='time')
     return
-    #return data
     
 def ptu_parse_sim(sim_file):
     '''
@@ -167,18 +164,18 @@ def ptu_parse_sim(sim_file):
     Example Usage:
     
         sim_file = '/home/pi/Desktop/git_repos/GLO/tracking/ptu_simulations/dual_test.csv'
-        ptu_cmds = ptu_parse_file(sim_file)
+        ptu_cmds = ptu_parse_sim(sim_file)
         print(ptu_cmds)
-        [out]: [['1.0', 'po100 ', 'po-100 '],
-                ['2.0', 'po-100 ', 'po100 '],
-                ['3.0', 'po1000 ', 'po-1000 ']]
+        [out]: [[1.0, 'po100 ', 'po-100 '],
+                [2.0, 'po-100 ', 'po100 '],
+                [3.0, 'po1000 ', 'po-1000 ']]
                   
     '''
     with open(sim_file,'r') as f:
         ptu_cmds = f.readlines()
-    ptu_cmds = [[x.strip().split(',')[0],
+    ptu_cmds = [[float(x.strip().split(',')[0]),
                  x.strip().split(',')[1]+' ',
-                 x.strip().split(',')[2]+' '] for x in cmd_list]
+                 x.strip().split(',')[2]+' '] for x in ptu_cmds]
                         
     return ptu_cmds
 
@@ -223,38 +220,57 @@ def cmd_list(ptu_ser,commands,cmd_delay=0.1,echo=True):
             ptu_ser.write(cmd.encode())
             time.sleep(cmd_delay)
             
-def ptu_ebay_cmd(ser,cmd):
+def ptu_ebay_cmd(ser,t0,cmd):
     try:
         ser.write(cmd.encode())
     except:
         print('ptu_ebay command failed',time.time())
         
-def ptu_d48_cmd(ser,cmd):
+def ptu_d48_cmd(ser,to,cmd):
     try:
         ser.write(cmd.encode())
     except:
         print('ptu_ebay command failed',time.time())
         
-def ptu_timer(cmd_list):
+def ptu_timer(ser_ptu_ebay,ser_ptu_d48,cmd_list):
     t0=time.time()
     print('t0=',t0)
     ti=np.zeros(len(cmd_list))
     #This loop for loop will schedule the print_time function to
     #be executed every second for 10 seconds
-    for i in range(len(cmd_list):
+    for i in range(len(cmd_list)):
         ti[i]=time.time()
         dt=ti[i]-t0
-        Timer(cmd_list[i][0]-dt, ptu_ebay, args=[t0,cmd_list[i][1]).start()
-        Timer(cmd_list[i][0]-dt, ptu_ebay, args=[t0,cmd_list[i][2]).start()
+        Timer(cmd_list[i][0]-dt, ser_ptu_ebay, args=(t0,cmd_list[i][1])).start()
+        Timer(cmd_list[i][0]-dt, ser_ptu_d48, args=(t0,cmd_list[i][2])).start()
 
-def ptu_simulate(ptu_com_port,
-                 ptu_baudrate,
+def open_ptu(com_port,baudrate):
+    ''' 
+    Open serial connection with PTU
+    '''
+    
+    ser = serial.Serial(
+        port=com_port,
+        baudrate=baudrate)
+    
+    if ser.isOpen():
+        print('Connected to PTU D300 Ebay (or not)')
+        return ser
+    else:
+        print('Houston the comm port aint workin')  
+    return ser
+
+def ptu_simulate(ptu_ebay_com_port,
+                 ptu_d48_com_port,
+                 ptu_ebay_baudrate,
+                 ptu_d48_baudrate,
                  ptu_cmd_list,
                  ptu_save_loc,
                  file_prefix):
     try:
-        ptu = PTU(ptu_com_port,ptu_baudrate,ptu_sim_file,ptu_save_loc)
-        ptu.run()
+        ser_ptu_ebay = open_ptu(ptu_ebay_com_port,ptu_ebay_baudrate)
+        ser_ptu_d48 = open_ptu(ptu_d48_com_port,ptu_d48_baudrate)
+        ptu_timer(ser_ptu_ebay,ser_ptu_d48)
     except:
         print('PTU not available, try again later')
     return
@@ -364,7 +380,7 @@ if __name__ == '__main__':
         loop_trigger.value=1       #reset loop_trigger to 1 to enable imu_recording
         run_num=run_num+i    
         os.makedirs(params.save_loc+'run_'+str(run_num))  #create new folder for each simulation run
-        cmd_list_ptu_d48,cmd_list_ptu_ebay = ptu_parse(sim_files[i])
+        ptu_cmd_list = ptu_parse_sim(sim_files[i])
         #define file_prefix 
         file_prefix = datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')+'_'+sim_files[i].split('/')[-1]
         gopro_start = multiprocessing.Process(name='gopro_start', target=rec_video,args=(True,))
@@ -375,18 +391,13 @@ if __name__ == '__main__':
                                                                                     file_prefix,
                                                                                     loop_trigger
                                                                                     ))
-        ptu_ebay = multiprocessing.Process(name='ptu_simulate',target=ptu_simulate,args=(params.ptu_com_port,
-                                                                                        params.ptu_baudrate,
-                                                                                        cmd_list_ptu_ebay,
-                                                                                        params.ptu_cmd_delay,
-                                                                                        params.save_loc+'run_'+str(i)))#,
+        ptu_ebay = multiprocessing.Process(name='ptu_simulate',target=ptu_simulate,args=(params.ptu_ebay_com_port,
+                                                                                         params.ptu_d48_com_port,
+                                                                                         params.ptu_ebay_baurdrate,
+                                                                                         params.ptu_d48_baudrate,                                                                               ,
+                                                                                         ptu_cmd_list,
+                                                                                         params.save_loc+'run_'+str(i)))#,
 ##                                                                                        file_prefix))
-        ptu_d48 = multiprocessing.Process(name='ptu_d48_simulate',target=ptu_d48_simulate,args=(params.ptu48_com_port,
-                                                                                        params.ptu48_baudrate,
-                                                                                        cmd_list_ptu_d48,
-                                                                                        params.ptu_cmd_delay,
-                                                                                        params.save_loc+'run_'+str(i)))#,
-##                                                                                        file_prefix)) 
     
         gopro_start.start()
         while gopro_start.is_alive():
