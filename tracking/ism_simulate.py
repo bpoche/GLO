@@ -204,7 +204,7 @@ def rec_imu(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger):
                                  'ang_y',
                                  'ang_z'])
     while loop_trigger.value==1:
-        print('rec_imu loop',loop_trigger.value)
+        #print('rec_imu loop',loop_trigger.value)
         t1=time.time()
         try:
             line=ser.readline().decode().split(',')        
@@ -524,6 +524,12 @@ if __name__ == '__main__':
         file_prefix = datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')+'_'+ptu_sim_files[i].split('/')[-1]
         gopro_start = multiprocessing.Process(name='gopro_start', target=rec_video,args=(vid_data_loc,True))
         gopro_stop = multiprocessing.Process(name='gopro_stop', target=stop_video,args=(vid_data_loc,))
+##        imu_record = multiprocessing.Process(name='imu_record', target=rec_imu,args=(params.imu_com_port,
+##                                                                                    params.imu_baudrate,
+##                                                                                    params.save_loc+'run_'+str(run_num),
+##                                                                                    file_prefix,
+##                                                                                    loop_trigger
+##                                                                                    ))
         imu_record = multiprocessing.Process(name='imu_record', target=rec_imu_async,args=(params.imu_com_port,
                                                                                     params.imu_baudrate,
                                                                                     params.save_loc+'run_'+str(run_num),
