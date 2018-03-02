@@ -2,8 +2,8 @@
 from goprohero import GoProHero
 from goprocam import GoProCamera
 from goprocam import constants
-from  ptu_d300_ebay.ptu_simulation import PTU
-from vn100.imu_record import VN100
+#from ptu_d300_ebay.ptu_simulation import PTU
+#from vn100.imu_record import VN100
 import argparse
 import multiprocessing
 from multiprocessing import Queue,Value
@@ -267,7 +267,7 @@ def ptu_parse_sim(sim_file):
                 [3.0, 'po1000 ', 'po-1000 ']]
                   
     '''
-    df = pd.read_csv(sim_file)
+    df = pd.read_csv(sim_file,keep_default_na=False)
     ptu_cmds=[]
     for i in range(len(df)):
         ptu_cmds.append([df.delay[i],
@@ -318,13 +318,14 @@ def cmd_list(ptu_ser,commands,cmd_delay=0.1,echo=True):
             
 def ptu_ebay_cmd(ser,cmd):
     try:
-        print('ebay cmd=',cmd)
+        print('ptu_ebay cmd=',cmd)
         ser.write(cmd.encode())
     except:
         print('ptu_ebay command failed',time.time())
         
 def ptu_d48_cmd(ser,cmd):
     try:
+        print('ptu_d48 cmd=',cmd)
         ser.write(cmd.encode())
     except:
         print('ptu_d48 command failed',time.time())
