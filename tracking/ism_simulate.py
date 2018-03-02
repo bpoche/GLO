@@ -75,6 +75,23 @@ def stop_video(vid_data_loc):
     time.sleep(2)
     return
 
+##def imu_read_async(ez):
+##
+##def imu_timer(ez):
+##    t0=time.time()
+##    print('scheduling ptu timers t=',t0)
+##    ti=np.zeros(len(cmd_list))
+##    #This loop for loop will schedule the print_time function to
+##    #be executed every second for 10 seconds
+##    try:
+##        while loop_trigger.value==1:
+##            ti[i]=time.time()
+##            dt=ti[i]-t0
+##            Timer(cmd_list[i][0]-dt+1, imu_read_async, args=(ser_ptu_ebay,cmd_list[i][1])).start()
+##            
+##    except:
+##        print('timer function failed')
+
 def rec_imu_async(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger,imu_freq):
     '''
     1)Open IMU VN100 com port
