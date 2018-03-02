@@ -44,7 +44,7 @@ def rec_video(vid_data_loc,quick=True):
     video_start_time=datetime.now()
     status = cam.command('record','01')
     vid_data = pd.read_csv(vid_data_loc,index_col='run')
-    vid_data.loc[vid_data.shape[0],'t_start']=video_start_time
+    vid_data.loc[vid_data.index[0],'t_start']=video_start_time
     vid_data.to_csv(vid_data_loc)
     time.sleep(delay)  
     if status == True:
@@ -63,13 +63,13 @@ def stop_video(vid_data_loc):
     print('stopping video')
     time.sleep(delay)
     gpCam = GoProCamera.GoPro(constants.auth)
-    time.sleep(delay+5)
+    time.sleep(delay+2)
     #print('obtaining filename (unobtanium?)',vid_data_loc)
     file_name=gpCam.getMedia().split('videos')[1]
     time.sleep(2)
     vid_data = pd.read_csv(vid_data_loc,index_col='run')
-    vid_data.loc[vid_data.shape[0]-1,'t_stop']=datetime.now()
-    vid_data.loc[vid_data.shape[0]-1,'filename']=file_name
+    vid_data.loc[vid_data.index[0],'t_stop']=datetime.now()
+    vid_data.loc[vid_data.index[0],'filename']=file_name
     vid_data.to_csv(vid_data_loc,index_label='run')
     print('filename = ',file_name)
     time.sleep(2)
@@ -105,6 +105,7 @@ def rec_imu_async(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger,im
                                  'ang_x',
                                  'ang_y',
                                  'ang_z'])
+    print('imu_rec_asyc loop_trigger=',loop_trigger.value)
     while loop_trigger.value==1:
         #print('rec_imu loop',loop_trigger.value)
         t1=time.time()
@@ -149,7 +150,7 @@ def rec_imu_async(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger,im
                                     ang_z]
     data.to_csv(save_loc+'/vn100_'+file_prefix+'.csv',
                 index_label='time')
-    print('rec_imu done')
+    print('rec_imu async done')
     return
 
 def rec_imu(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger):
@@ -186,7 +187,7 @@ def rec_imu(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger):
                                  'ang_y',
                                  'ang_z'])
     while loop_trigger.value==1:
-        #print('rec_imu loop',loop_trigger.value)
+        print('rec_imu loop',loop_trigger.value)
         t1=time.time()
         try:
             line=ser.readline().decode().split(',')        
@@ -318,14 +319,14 @@ def cmd_list(ptu_ser,commands,cmd_delay=0.1,echo=True):
             
 def ptu_ebay_cmd(ser,cmd):
     try:
-        print('ptu_ebay cmd=',cmd)
+        print('ptu_ebay cmd=##',cmd,'##')
         ser.write(cmd.encode())
     except:
         print('ptu_ebay command failed',time.time())
         
 def ptu_d48_cmd(ser,cmd):
     try:
-        print('ptu_d48 cmd=',cmd)
+        print('ptu_d48 cmd=##',cmd,'##')
         ser.write(cmd.encode())
     except:
         print('ptu_d48 command failed',time.time())
@@ -344,6 +345,9 @@ def ptu_timer(ser_ptu_ebay,ser_ptu_d48,cmd_list):
             Timer(cmd_list[i][0]-dt+1, ptu_d48_cmd, args=(ser_ptu_d48,cmd_list[i][2])).start()
     except:
         print('timer function failed')
+        
+    #sleep for duration of simulation
+    #time.sleep(cmd_list[-1][0]+3)
 def open_ptu(com_port,baudrate):
     ''' 
     Open serial connection with PTU
@@ -435,7 +439,7 @@ if __name__ == '__main__':
 
 ########### PTU_Ebay parameters ################    
     parser.add_argument('-ptue_c','--ptu_ebay_com_port',
-                        default='/dev/ttyUSB1',
+                        default='/dev/ttyUSB0',
                         type=str,
                         help='ptu ebay com port name')
     parser.add_argument('-ptue_b','--ptu_ebay_baudrate',
@@ -494,8 +498,9 @@ if __name__ == '__main__':
         run_num=run_num+i     
         os.makedirs(params.save_loc+'run_'+str(run_num))  #create new folder for each simulation run
         vid_data_loc=params.gp_save_loc+'/run_'+str(run_num)+'/vid_info.csv'
-        vid_data_df=pd.DataFrame(columns=['filename','t_start','t_stop'])
+        vid_data_df=pd.DataFrame(columns=['filename','t_start','t_stop','sim_file'])
         vid_data_df.loc[vid_data_df.shape[0],:]=np.nan
+        vid_data_df.loc[vid_data_df.index[0],'sim_file']=ptu_sim_files[i]
         vid_data_df.to_csv(vid_data_loc,index_label='run')
         ptu_cmd_list = ptu_parse_sim(ptu_sim_files[i])
         #define file_prefix 
@@ -529,15 +534,17 @@ if __name__ == '__main__':
         while ptu_sim.is_alive():
             pass
         print('bout to turn off loop tirgger',loop_trigger.value)
-        loop_trigger.value=0
         print('done turnt off the loop trigger',loop_trigger.value)
         time.sleep(1)
-        imu_record.terminate()
+        #imu_record.terminate()
         #ptu_sim.terminate()
         gopro_stop.start()
         while gopro_stop.is_alive():
             pass
-        print('reached end of process loop')
+        loop_trigger.value=0
+        time.sleep(5)
+        vid_data = pd.read_csv(vid_data_loc,index_col='run')
+        print('End of simulation, thanks for playing!')
     #gopro_stop.terminate()
     #gopro_stop.join()
     #imu_record.join()
