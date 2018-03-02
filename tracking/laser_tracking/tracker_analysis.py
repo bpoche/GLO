@@ -33,7 +33,7 @@ dif_time=time.diff().values
 deriv=dif_pos/(dif_time)
 
 #PTU angular rate in degrees per second
-ptu_rate=-92.0/60/60/4
+ptu_rate=-23.14285/60/60
 
 #degrees per pixel
 dpp=ptu_rate/deriv
