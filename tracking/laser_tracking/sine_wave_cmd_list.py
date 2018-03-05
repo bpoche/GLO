@@ -71,7 +71,7 @@ def calibrate_angles(ptu='ism',
             #"space"
             cmd_time.append(this_time)
             cmd_ebay.append('')
-            cmd_ismu.append('po'+vstep)
+            cmd_ismu.append('po8')
     
     if ptu != 'ebay':
         df = pd.DataFrame(data={'delay':cmd_time,
