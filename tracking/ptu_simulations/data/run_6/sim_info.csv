@@ -1,0 +1,2 @@
+run,filename,t_start,t_stop,sim_file
+0,/DCIM/100GOPRO/GOPR0254.MP4,2018-03-05 15:39:57.110883,2018-03-05 15:41:58.920734,/home/pi/Desktop/git_repos/GLO/tracking/ptu_simulations/calibrate_angles_ebay.csv
