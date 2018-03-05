@@ -49,24 +49,29 @@ def calibrate_angles(ptu='ism',
     #PTU 1/8th microstep size in arc seconds converted to degrees
     ptu_mstep=23.14285/(60.0*60.0)
     
-    for it in range(1,100):
+    for it in range(1,150):
         
         this_time=it+t0-1
         #move ism PTU to each position
-        if (it % 10) == 0:
+        if (ptu == 'ebay'):
+            vstep='8'
+        else:
+            vstep='16'
+            
+        if (it % 15) == 0:
             #carraige return
             cmd_time.append(this_time)
             cmd_ebay.append('')
-            cmd_ismu.append('po-72')
+            cmd_ismu.append('po-112')
             
             cmd_time.append(this_time+0.1)
             cmd_ebay.append('')
-            cmd_ismu.append('to-8')
+            cmd_ismu.append('to-'+vstep)
         else:
             #"space"
             cmd_time.append(this_time)
             cmd_ebay.append('')
-            cmd_ismu.append('po8')
+            cmd_ismu.append('po'+vstep)
     
     if ptu != 'ebay':
         df = pd.DataFrame(data={'delay':cmd_time,
