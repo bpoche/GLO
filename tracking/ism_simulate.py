@@ -20,11 +20,17 @@ import threading
 from threading import Timer
 
 def rec_video(vid_data_loc,quick=True):
+    '''
+    1. Connect to GoPro using GoProHero library
+    2. Stop GoPro (in case already recording)
+    3. Record timestamp
+    4. Start GoPro video recording
+    5. Save start timestamp to sim_info.csv
+    '''
     print('rec_video started')
     with open('/home/pi/Desktop/git_repos/GLO/tracking/gopro/wifi.txt', 'r') as myfile:
         p=myfile.read().replace('\n', '')
     delay=2.0
-    #name = multiprocessing.current_process().name
     cam = GoProHero(password=p)
     time.sleep(delay)
     #stop gopro video if already recording
@@ -52,6 +58,13 @@ def rec_video(vid_data_loc,quick=True):
     print('rec_video done')
     
 def stop_video(vid_data_loc):
+    '''
+    1. Connect to gopro using GoProHero Library
+    2. Stop video recording
+    3. Connect to gopro using GoProCamera Library
+    4. Retrieve filename of latest video
+    5. Save video filename and timestamp of when 'stop recording command' was sent to sim_info.csv
+    '''
     delay=2.0
     with open('/home/pi/Desktop/git_repos/GLO/tracking/gopro/wifi.txt', 'r') as myfile:
         p=myfile.read().replace('\n', '')
@@ -97,11 +110,25 @@ def stop_video(vid_data_loc):
 ##    except:
 ##        print('timer function failed')
 
-def rec_imu_async(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger,imu_freq):
+def rec_imu_async(imu_com_port,
+                  imu_baudrate,
+                  save_loc,
+                  file_prefix,
+                  loop_trigger,
+                  imu_freq):
     '''
     1)Open IMU VN100 com port
     2)Start reading/storing imu data in pandas dataframe
     3)Once loop_trigger changes from 1->0, stop recording, save to file
+    
+    Inputs:
+        imu_com_port,
+        imu_baudrate,
+        save_loc,
+        file_prefix,
+        loop_trigger,
+        imu_freq
+    
     '''
     print('rec_imu_async starting')
     
@@ -196,94 +223,94 @@ def rec_imu_async(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger,im
                          'mag_y':mag_y,
                          'mag_z':mag_z})
     data = data.set_index('time')
-    data.to_csv(save_loc+'/vn100_'+file_prefix+'.csv',
+    data.to_csv(save_loc+'/imu_'+file_prefix+'.csv',
                 index_label='time')
     print('rec_imu async done')
     return
 
-def rec_imu(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger):
-    '''
-    1)Open IMU VN100 com port
-    2)Start reading/storing imu data in pandas dataframe
-    3)Once loop_trigger changes from 1->0, stop recording, save to file
-    '''
-    print('rec_imu starting')
-    try:
-        ser = serial.Serial(
-            port=imu_com_port,
-            baudrate=imu_baudrate)
-    except:
-        print('could not open imu com port')
-    
-    if ser.isOpen():
-        print('Connected to VectorNav VN100')
-    else:
-        print('Houston the VectorNav com port aint workin')
-         
-    t0 = time.time()
-    data = pd.DataFrame(columns=['elasped',
-                                 'yaw',
-                                 'pitch',
-                                 'roll',
-                                 'mag_x',
-                                 'mag_y',
-                                 'mag_z',
-                                 'accel_x',
-                                 'accel_y',
-                                 'accel_z',
-                                 'ang_x',
-                                 'ang_y',
-                                 'ang_z'])
-    while loop_trigger.value==1:
-        #print('rec_imu loop',loop_trigger.value)
-        t1=time.time()
-        try:
-            line=ser.readline().decode().split(',')        
-            try:
-                yaw = float(line[1])
-                pitch = float(line[2])
-                roll = float(line[3])
-                mag_x = float(line[4])
-                mag_y = float(line[5])
-                mag_z = float(line[6])
-                accel_x = float(line[4])
-                accel_y = float(line[5])
-                accel_z = float(line[6])
-                ang_x = float(line[4])
-                ang_y = float(line[5])
-                ang_z = float(line[6])
-            except:
-                yaw = np.nan
-                pitch = np.nan
-                roll = np.nan
-                mag_x = np.nan
-                mag_y = np.nan
-                mag_z = np.nan
-                accel_x = np.nan
-                accel_y = np.nan
-                accel_z = np.nan
-                ang_x = np.nan
-                ang_y = np.nan
-                ang_z = np.nan    
-            data.loc[datetime.now()] = [round(1000*(t1-t0),4),
-                                        yaw,
-                                        pitch,
-                                        roll,
-                                        mag_x,
-                                        mag_y,
-                                        mag_z,
-                                        accel_x,
-                                        accel_y,
-                                        accel_z,
-                                        ang_x,
-                                        ang_y,
-                                        ang_z]
-        except:
-            print('missed imu dataframe')
-    data.to_csv(save_loc+'/vn100_'+file_prefix+'.csv',
-                index_label='time')
-    print('rec_imu done')
-    return
+##def rec_imu(imu_com_port,imu_baudrate,save_loc,file_prefix,loop_trigger):
+##    '''
+##    1)Open IMU VN100 com port
+##    2)Start reading/storing imu data in pandas dataframe
+##    3)Once loop_trigger changes from 1->0, stop recording, save to file
+##    '''
+##    print('rec_imu starting')
+##    try:
+##        ser = serial.Serial(
+##            port=imu_com_port,
+##            baudrate=imu_baudrate)
+##    except:
+##        print('could not open imu com port')
+##    
+##    if ser.isOpen():
+##        print('Connected to VectorNav VN100')
+##    else:
+##        print('Houston the VectorNav com port aint workin')
+##         
+##    t0 = time.time()
+##    data = pd.DataFrame(columns=['elasped',
+##                                 'yaw',
+##                                 'pitch',
+##                                 'roll',
+##                                 'mag_x',
+##                                 'mag_y',
+##                                 'mag_z',
+##                                 'accel_x',
+##                                 'accel_y',
+##                                 'accel_z',
+##                                 'ang_x',
+##                                 'ang_y',
+##                                 'ang_z'])
+##    while loop_trigger.value==1:
+##        #print('rec_imu loop',loop_trigger.value)
+##        t1=time.time()
+##        try:
+##            line=ser.readline().decode().split(',')        
+##            try:
+##                yaw = float(line[1])
+##                pitch = float(line[2])
+##                roll = float(line[3])
+##                mag_x = float(line[4])
+##                mag_y = float(line[5])
+##                mag_z = float(line[6])
+##                accel_x = float(line[4])
+##                accel_y = float(line[5])
+##                accel_z = float(line[6])
+##                ang_x = float(line[4])
+##                ang_y = float(line[5])
+##                ang_z = float(line[6])
+##            except:
+##                yaw = np.nan
+##                pitch = np.nan
+##                roll = np.nan
+##                mag_x = np.nan
+##                mag_y = np.nan
+##                mag_z = np.nan
+##                accel_x = np.nan
+##                accel_y = np.nan
+##                accel_z = np.nan
+##                ang_x = np.nan
+##                ang_y = np.nan
+##                ang_z = np.nan    
+##            data.loc[datetime.now()] = [round(1000*(t1-t0),4),
+##                                        yaw,
+##                                        pitch,
+##                                        roll,
+##                                        mag_x,
+##                                        mag_y,
+##                                        mag_z,
+##                                        accel_x,
+##                                        accel_y,
+##                                        accel_z,
+##                                        ang_x,
+##                                        ang_y,
+##                                        ang_z]
+##        except:
+##            print('missed imu dataframe')
+##    data.to_csv(save_loc+'/vn100_'+file_prefix+'.csv',
+##                index_label='time')
+##    print('rec_imu done')
+##    return
     
 def ptu_parse_sim(sim_file):
     '''
@@ -324,48 +351,53 @@ def ptu_parse_sim(sim_file):
                          df.ptu_d48_cmd[i]+' '])                    
     return ptu_cmds
 
-def cmd_list(ptu_ser,commands,cmd_delay=0.1,echo=True):
-    '''
-    Enter a list of commands for ptu to execute sequentially
-    
-    Input:
-        command_list: list of input commands (ie ['i ','pp200 ','pp-200 '])
-    
-    Example Usage:
-        1) Command the pan axis to move to far left, then slowly move right,
-            then on-the-fly speed up
-        
-                commands=['i ',
-                          'ps1900 ',
-                          'pp2600 ',
-                          'a ',
-                          'ps600 ',
-                          'pp-2600 ',
-                          'ps1900 ']
-                cmd_list(commands)
-        2) Set limits on pan axis to +-1000units
-            pan_limit_hi=1000
-            pan_limit_lo=-1000
-            commands=['le ',
-                      'l ',
-                      'lu ',
-                      'pxu'+str(pan_limit_hi)+' ',
-                      'pnu'+str(pan_limit_lo)+' ']
-            cmd_list(commands)
-            cmd('pnu ')
-            cmd('pxu ')
-    
-    '''
-    for cmd in commands:
-        if echo:
-            print(cmd[0])
-            ptu_ser.write(cmd[0].encode())
-            time.sleep(cmd[1])
-        else:
-            ptu_ser.write(cmd.encode())
-            time.sleep(cmd_delay)
+##def cmd_list(ptu_ser,commands,cmd_delay=0.1,echo=True):
+##    '''
+##    Enter a list of commands for ptu to execute sequentially
+##    
+##    Input:
+##        command_list: list of input commands (ie ['i ','pp200 ','pp-200 '])
+##    
+##    Example Usage:
+##        1) Command the pan axis to move to far left, then slowly move right,
+##            then on-the-fly speed up
+##        
+##                commands=['i ',
+##                          'ps1900 ',
+##                          'pp2600 ',
+##                          'a ',
+##                          'ps600 ',
+##                          'pp-2600 ',
+##                          'ps1900 ']
+##                cmd_list(commands)
+##        2) Set limits on pan axis to +-1000units
+##            pan_limit_hi=1000
+##            pan_limit_lo=-1000
+##            commands=['le ',
+##                      'l ',
+##                      'lu ',
+##                      'pxu'+str(pan_limit_hi)+' ',
+##                      'pnu'+str(pan_limit_lo)+' ']
+##            cmd_list(commands)
+##            cmd('pnu ')
+##            cmd('pxu ')
+##    
+##    '''
+##    for cmd in commands:
+##        if echo:
+##            print(cmd[0])
+##            ptu_ser.write(cmd[0].encode())
+##            time.sleep(cmd[1])
+##        else:
+##            ptu_ser.write(cmd.encode())
+##            time.sleep(cmd_delay)
             
 def ptu_ebay_cmd(ser,cmd):
+    '''
+    Inputs:
+        ser: serial port object for ptu_ebay
+        cmd: (str) ASCII command to sent to ptu (ie 'po100 ')
+    '''
     try:
         print('ptu_ebay cmd=##',cmd,'##')
         ser.write(cmd.encode())
@@ -373,6 +405,11 @@ def ptu_ebay_cmd(ser,cmd):
         print('ptu_ebay command failed',time.time())
         
 def ptu_d48_cmd(ser,cmd):
+    '''
+    Inputs:
+        ser: serial port object for ptu_d48
+        cmd: (str) ASCII command to sent to ptu (ie 'po100 ')
+    '''
     try:
         print('ptu_d48 cmd=##',cmd,'##')
         ser.write(cmd.encode())
@@ -380,6 +417,13 @@ def ptu_d48_cmd(ser,cmd):
         print('ptu_d48 command failed',time.time())
         
 def ptu_timer(ser_ptu_ebay,ser_ptu_d48,cmd_list):
+    '''
+    Schedule thread timers using delays provided in ptu command list
+    Inputs:
+        ser_ptu_ebay: serial object for ptu_ebay
+        ser_ptu_ebay: serial object for ptu_d48
+        cmd_list: command list in format (delay,ptu_cmd_ebay,ptu_cmd_d48), (ie [1.5,po100,po200]) 
+    '''
     t0=time.time()
     print('scheduling ptu timers t=',t0)
     ti=np.zeros(len(cmd_list))
@@ -392,10 +436,8 @@ def ptu_timer(ser_ptu_ebay,ser_ptu_d48,cmd_list):
             Timer(cmd_list[i][0]-dt+1, ptu_ebay_cmd, args=(ser_ptu_ebay,cmd_list[i][1])).start()
             Timer(cmd_list[i][0]-dt+1, ptu_d48_cmd, args=(ser_ptu_d48,cmd_list[i][2])).start()
     except:
-        print('timer function failed')
+        print('timer function failed, good luck')
         
-    #sleep for duration of simulation
-    #time.sleep(cmd_list[-1][0]+3)
 def open_ptu(com_port,baudrate):
     ''' 
     Open serial connection with PTU
@@ -419,6 +461,21 @@ def ptu_simulate(ptu_ebay_com_port,
                  ptu_cmd_list,
                  ptu_save_loc,
                  file_prefix):
+    '''
+    1. Open ptu_ebay serial port
+    2. Open ptu_d48 serial port
+    3. Start threading timer function ptu_timer()
+    4. Sleep for longest delay in provided ptu_cmd_list
+    
+    Inputs:
+        ptu_ebay_com_port: (str) default = '/dev/ttyUSB0'
+        ptu_d48_com_port: (str) default = '/dev/ttyUSB1'
+        ptu_ebay_baudrate: (int) default = 9600
+        ptu_d48_baudrate: (int) default = 9600
+        ptu_cmd_list: (list) ptu command list generated from ptu_parse_sim() 
+        ptu_save_loc: unused
+        file_prefix:
+    '''
     try:
         ser_ptu_ebay = open_ptu(ptu_ebay_com_port,ptu_ebay_baudrate)
         ser_ptu_d48 = open_ptu(ptu_d48_com_port,ptu_d48_baudrate)
@@ -553,7 +610,7 @@ if __name__ == '__main__':
         loop_trigger.value=1       #reset loop_trigger to 1 to enable imu_recording
         run_num=run_num+i     
         os.makedirs(params.save_loc+'run_'+str(run_num))  #create new folder for each simulation run
-        vid_data_loc=params.gp_save_loc+'/run_'+str(run_num)+'/vid_info.csv'
+        vid_data_loc=params.gp_save_loc+'/run_'+str(run_num)+'/sim_info.csv'
         vid_data_df=pd.DataFrame(columns=['filename','t_start','t_stop','sim_file'])
         vid_data_df.loc[vid_data_df.shape[0],:]=np.nan
         vid_data_df.loc[vid_data_df.index[0],'sim_file']=ptu_sim_files[i]
