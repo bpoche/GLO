@@ -57,7 +57,7 @@ def calibrate_angles(ptu='ism',
             #carraige return
             cmd_time.append(this_time)
             cmd_ebay.append('')
-            cmd_ismu.append('po-80')
+            cmd_ismu.append('po-72')
             
             cmd_time.append(this_time+0.1)
             cmd_ebay.append('')
