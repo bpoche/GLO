@@ -304,7 +304,7 @@ def rec_imu_async(imu_com_port,
 ##                index_label='time')
 ##    print('rec_imu done')
 ##    return
-    
+   
 def ptu_parse_sim(sim_file):
     '''
     Parse simulation file into a list with the following format:
@@ -431,13 +431,22 @@ def open_ptu(com_port,baudrate):
     except:
         print('Failed to open up ptu com port')
 
+def ptu_cmd(ser,cmd,delay=0.2):
+    ser.write(cmd.encode())
+    time.sleep(delay)
+
 def ptu_simulate(ptu_ebay_com_port,
                  ptu_d48_com_port,
                  ptu_ebay_baudrate,
                  ptu_d48_baudrate,
                  ptu_cmd_list,
                  ptu_save_loc,
-                 file_prefix):
+                 file_prefix,
+                 ptu48_kp,
+                 ptu48_ks,
+                 ptu48_ka,
+                 ptu48_vd,
+                 ptu48_pd):
     '''
     1. Open ptu_ebay serial port
     2. Open ptu_d48 serial port
@@ -452,13 +461,29 @@ def ptu_simulate(ptu_ebay_com_port,
         ptu_cmd_list: (list) ptu command list generated from ptu_parse_sim() 
         ptu_save_loc: unused
         file_prefix:
+        ptu48_kp: proportional gain setting
+        ptu48_ks: output filter setting (0.0 - 1.0) 
+        ptu48_ka: acceleration feed-forward settting
+        ptu48_vd: velocity deadband setting
+        ptu48_pd: position deadband setting
     '''
     try:
         ser_ptu_ebay = open_ptu(ptu_ebay_com_port,ptu_ebay_baudrate)
         ser_ptu_d48 = open_ptu(ptu_d48_com_port,ptu_d48_baudrate)
         print('made it')
         
-        #Set ptu_d48 feedback parameters
+        #Set ptu_d48 feedback parameters     
+        ptu_cmd(ser_ptu_d48,'scpkp'+str(ptu48_kp)+' ')  #pan proportional gain
+        ptu_cmd(ser_ptu_d48,'sctkp'+str(ptu48_kp)+' ')  #tilt proportional gain
+        ptu_cmd(ser_ptu_d48,'scpks'+str(ptu48_kp)+' ')  #pan output filter
+        ptu_cmd(ser_ptu_d48,'sctks'+str(ptu48_kp)+' ')  #tilt output filter
+        ptu_cmd(ser_ptu_d48,'scpka'+str(ptu48_kp)+' ')  #pan acceleration feed forward
+        ptu_cmd(ser_ptu_d48,'sctka'+str(ptu48_kp)+' ')  #tilt acceleration feed forward
+        ptu_cmd(ser_ptu_d48,'scpvd'+str(ptu48_kp)+' ')  #pan velocity deadband
+        ptu_cmd(ser_ptu_d48,'sctvd'+str(ptu48_kp)+' ')  #tilt velocity deadband
+        ptu_cmd(ser_ptu_d48,'scppd'+str(ptu48_kp)+' ')  #pan position deadband
+        ptu_cmd(ser_ptu_d48,'sctpd'+str(ptu48_kp)+' ')  #tilt position deadband
+        
         ptu_timer(ser_ptu_ebay,ser_ptu_d48,ptu_cmd_list)
         time.sleep(ptu_cmd_list[-1][0]+2)
         print('sleep timer expired')
@@ -665,7 +690,15 @@ if __name__ == '__main__':
         while gopro_stop.is_alive():
             pass    
         time.sleep(2)
+        
+        #write all gain parameters to sim_info.csv
         vid_data = pd.read_csv(vid_data_loc,index_col='run')
+        vid_data['d48_kp']=params.ptu48_kp
+        vid_data['d48_ks']=params.ptu48_ks
+        vid_data['d48_ka']=params.ptu48_ka
+        vid_data['d48_vd']=params.ptu48_vd
+        vid_data['d48_pd']=params.ptu48_pd
+        vid_data.to_csv(vid_data_loc,index_label='run')
     print('End of simulation, thanks for playing!')
 
 
