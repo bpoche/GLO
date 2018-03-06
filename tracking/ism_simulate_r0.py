@@ -640,6 +640,8 @@ if __name__ == '__main__':
         vid_data_df.loc[vid_data_df.shape[0],:]=np.nan
         vid_data_df.loc[vid_data_df.index[0],'sim_file']=ptu_sim_files[i]
         vid_data_df.to_csv(vid_data_loc,index_label='run')
+        
+        #parse commands from provided ptu_cmd_list .csv file
         ptu_cmd_list = ptu_parse_sim(ptu_sim_files[i])
         #define file_prefix 
         file_prefix = datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')+'_'+ptu_sim_files[i].split('/')[-1]
@@ -699,6 +701,10 @@ if __name__ == '__main__':
         vid_data['d48_vd']=params.ptu48_vd
         vid_data['d48_pd']=params.ptu48_pd
         vid_data.to_csv(vid_data_loc,index_label='run')
+        
+        #save command list to file
+        cmd_data = pd.read_csv(ptu_sim_files[i])
+        cmd_data.to_csv(params.gp_save_loc+'/run_'+str(run_num)+'/cmd_list.csv',index_label='cmd_num')
     print('End of simulation, thanks for playing!')
 
 
