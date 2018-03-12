@@ -1,0 +1,6 @@
+PTU_ebay unit having problems during calibration. 
+At the end of each sweep, it gets hung sometimes and does not make
+it all the way back to the left of the page. Then on each new sweep
+it doesn't move the full 8 positions for the first few commands.
+Not really sure why this is, but will try to just use a different 
+range of the pan axis for calibration.

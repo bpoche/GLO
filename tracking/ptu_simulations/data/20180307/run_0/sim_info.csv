@@ -1,0 +1,2 @@
+run,filename,t_start,t_stop,sim_file
+0,/DCIM/100GOPRO/GOPR0281.MP4,2018-03-06 16:36:17.740317,2018-03-06 16:36:39.244191,/home/pi/Desktop/git_repos/GLO/tracking/ptu_simulations/dual_test.csv
