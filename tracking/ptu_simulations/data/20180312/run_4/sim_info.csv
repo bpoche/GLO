@@ -1,0 +1,2 @@
+run,filename,t_start,t_stop,sim_file
+0,/DCIM/100GOPRO/GOPR0304.MP4,2018-03-12 15:06:46.042009,,/home/pi/Desktop/git_repos/GLO/tracking/ptu_simulations/sine_wave_sweep_ism_period_30_amp_50_freq_10_duration_120.csv
