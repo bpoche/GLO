@@ -1,0 +1,2 @@
+run,filename,t_start,t_stop,sim_file,d48_kp,d48_ks,d48_ka,d48_vd,d48_pd
+0,/DCIM/100GOPRO/GOPR0328.MP4,2018-03-22 17:25:55.801779,2018-03-22 17:27:16.281988,/home/pi/Desktop/git_repos/GLO/tracking/ptu_simulations/record_ism_1min.csv,10.0,1.0,0.001,0.0,0.0
