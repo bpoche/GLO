@@ -18,7 +18,7 @@ time+=1.0
 n+=1
 speed_ebay=1
 df.loc[n]=[time,'ps'+str(speed_ebay),'se']
-time+=4.0
+time+=6.0
 n+=1
 offset_ebay=10
 df.loc[n]=[time,'po'+str(offset_ebay),'']
@@ -35,11 +35,14 @@ for i in range(10):
     df.loc[n]=[time,'ps'+str(speed_ebay),'']
     n+=1
     time+=0.5 
+    offset_ebay=10*speed_ebay
     df.loc[n]=[time,'po'+str(offset_ebay),'']
-    time+=0.5+ np.ceil(offset_ebay/speed_ebay)
+    time+=10.0
+    #time+=0.5+ np.ceil(offset_ebay/speed_ebay)
     n+=1
     df.loc[n]=[time,'po-'+str(offset_ebay),'']
-    time+=0.5+ np.ceil(offset_ebay/speed_ebay)
+    time+=10.0
+    #time+=0.5+ np.ceil(offset_ebay/speed_ebay)
     n+=1
 
-df.to_csv('C:/git_repos/GLO/tracking/ptu_simulations/not_now/speed_bins.csv',index=False)
+df.to_csv('C:/git_repos/GLO/tracking/ptu_simulations/speed_bins/speed_bins.csv',index=False)
