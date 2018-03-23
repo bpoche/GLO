@@ -10,17 +10,23 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+calib_video="C:/git_repos/GLO/tracking/ptu_simulations/data/20180321/GOPR0312.csv"
+data_video="C:/git_repos/GLO/tracking/ptu_simulations/data/20180321/GOPR0314.csv"
+
+#def tracker_analysis(calib_video,data_video):
 
 #Determine the scale by looking at the slope of the 1 pos/sec video
-vid_name='GOPR0123'
-vid_dir='/tesla/data/ISM_VIDEO/'
+#vid_name='GOPR0123'
+#vid_dir='/tesla/data/ISM_VIDEO/'
 
-data=pd.read_csv(vid_dir+vid_name+'.csv')
 
-time=data.time_elapsed.to_frame()/1e3
+#data=pd.read_csv(vid_dir+vid_name+'.csv')
+data_calib=pd.read_csv(calib_video)
+
+time=data_calib.time_elapsed.to_frame()/1e3
 
 #1 second smooth to remove stair step
-rm=data.laser_cen_x.to_frame().rolling(120,center=True).mean()
+rm=data_calib.laser_cen_x.to_frame().rolling(120,center=True).mean()
 
 #plt.figure(1)
 #plt.plot(time,data.laser_cen_x,'x',color='black')
@@ -39,25 +45,26 @@ ptu_rate=-23.14285/60/60
 dpp=ptu_rate/deriv
 med_dpp=np.nanmedian(dpp)
 
-xpos=data.laser_cen_x.to_frame()*med_dpp
-time=data.time_elapsed.to_frame()/1e3
+xpos=data_calib.laser_cen_x.to_frame()*med_dpp
+time=data_calib.time_elapsed.to_frame()/1e3
 
-plt.figure(1,clear=True)
+plt.figure(1)
 plt.plot(time,xpos)
 #plt.figure(2)
 #plt.plot(time,dpp,color='blue')
 #plt.plot([0,80],[med_dpp,med_dpp],color='red')
 
 #open another video to analyze using the scale above
-vid_name='GOPR0117'
-vid_dir='/tesla/data/ISM_VIDEO/'
+#vid_name='GOPR0117'
+#vid_dir='/tesla/data/ISM_VIDEO/'
 
-data=pd.read_csv(vid_dir+vid_name+'.csv')
+#data=pd.read_csv(vid_dir+vid_name+'.csv')
+data=pd.read_csv(data_video)
 
 xpos=data.laser_cen_x.to_frame()*med_dpp
 time=data.time_elapsed.to_frame()/1e3
 
-plt.figure("Raw GLO relative pixel position for ISM errors",clear=True,)
+plt.figure("Raw GLO relative pixel position for ISM errors")
 plt.plot(time,xpos/2.5e-3,marker='.',markersize=1,color='black',
          linestyle="None")
 plt.xlabel('Time (s)')
@@ -67,7 +74,7 @@ plt.grid()
 std_xpos_120=xpos.rolling(120,center=True).std()
 std_xpos_020=xpos.rolling(20,center=True).std()
 
-fig3=plt.figure("Glo sun position cloud width per stacked frame",clear=True)
+fig3=plt.figure("Glo sun position cloud width per stacked frame")
 #plt3=plt.plot(time,std_xpos_120,color='black')
 plt3=plt.plot(time,std_xpos_020*2e0/2.5e-3,color='black',marker='.',
               markersize=1,linestyle="None")
@@ -82,7 +89,7 @@ spd=pd.DataFrame(data=xpos.diff().values/time.diff().values)
 
 pix_smear=spd*1e-3/2.5e-3
 
-fig4=plt.figure('GLO pixel smear per 1ms integration period',clear=True)
+fig4=plt.figure('GLO pixel smear per 1ms integration period')
 plt.plot(time,pix_smear,marker='.',markersize=1,linestyle="None",color="black")
 
 std_spd_120=pix_smear.rolling(120,center=True).std()
