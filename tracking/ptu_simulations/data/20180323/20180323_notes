@@ -1,0 +1,7 @@
+ptu stack stable on floor
+runs1-4 - different kpa settings , speed_bin sim file
+run5 calibration run
+run8 default gain settings
+run9 added full weight set to ptu_d48, reran default settings
+   weights cause big oscillations in feedback loop
+run10 reran with default settings with weights 1 and 2
