@@ -12,13 +12,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-def load_data(date='20180323'):
+def load_data(date='20180323',runs='all'):
 
     #Load Data
     cwd = os.getcwd()
     run_dir = cwd+'/'+date+'/'
     data={}
-    dirs = glob(run_dir+'run*')
+    if runs == 'all':
+           dirs = glob(run_dir+'run*')
+    else:
+           dirs = glob(run_dir+runs)
     data_calib_found=0
     no_data=[]
     for r in dirs:
@@ -86,7 +89,7 @@ def load_data(date='20180323'):
                 data[r]['time_laser']=data[r]['laser_data'].time_elapsed.to_frame()/1e3
                 data[r]['imu_data']['time']=data[r]['imu_data'].index.to_datetime()-data[r]['imu_data'].index[0]
                 data[r]['imu_data']['time']=data[r]['imu_data']['time'].astype('timedelta64[ms]')/1000.0
-                #Add in delay for imu_data recording
+                #Add in delay for imu_data recording ~2.2seconds
                 data[r]['time_imu_sync']=data[r]['imu_data']['time']+2.2   
 
                 #Laser data in gopro pixels
@@ -105,6 +108,10 @@ def load_data(date='20180323'):
                 data[r]['std_xpos_120']=data[r]['xpos_glo'].rolling(120,center=True).std()
                 #20 frames at 120FPS ~ 1 stacked frame at 6Hz
                 data[r]['std_xpos_020']=data[r]['xpos_glo'].rolling(20,center=True).std()
+                
+                data[r]['pix_smear']=data[r]['xpos_glo'].diff().values/data[r]['time_laser'].diff().values/1e3
+                data[r]['pix_smear_120']=pd.DataFrame(data[r]['pix_smear']).rolling(120,center=True).std()
+
 
             except:
                 print('could not extract data '+date +' '+ r)
@@ -114,29 +121,95 @@ def load_data(date='20180323'):
 if __name__ == '__main__':
        #Pick date to plot
        date='20180323'
-       data = load_data(date=date)
-                     
+       runs='all'
+       data = load_data(date=date,runs=runs)
+       
+       #Select which plots to show
+       plot_stacked_cloud = False
+       plot_glo_pixel_centered = False
+       plot_imu_deg_per_sec = False
+       plot_pixel_smear = True
+       
        #Plot sun position cloud per stacked frame
-       for r in sorted(data):
-           try:   
-               plt.figure(figsize=(20,5))
-               plt.plot(data[r]['time_laser'],
-                        data[r]['std_xpos_020'],
-                        color='black',
-                        marker='.',
-                        linestyle="None",
-                        label='kp='+str(data[r]['sim_info'].d48_kp[0])+' '+
-                              'ks='+str(data[r]['sim_info'].d48_ks[0])+' '+
-                              'ka='+str(data[r]['sim_info'].d48_ka[0])+' '+
-                              'vd='+str(data[r]['sim_info'].d48_vd[0])+' '+
-                              'pd='+str(data[r]['sim_info'].d48_pd[0])+' ')
-               plt.ylabel('Sun pixel position FWHM in stacked frame')
-               plt.xlabel('Time Elasped (seconds)')
-               plt.title("Glo sun position cloud width per stacked frame\n"+date+' '+r)
-               plt.legend(loc='upper left')
-               plt.ylim((0,10))
-           except:
-               continue
+       if plot_stacked_cloud == True:          
+              for r in sorted(data):
+                  try:   
+                      plt.figure(figsize=(20,5))
+                      plt.plot(data[r]['time_laser'],
+                               data[r]['std_xpos_020'],
+                               color='black',
+                               marker='.',
+                               linestyle="None",
+                               label='kp='+str(data[r]['sim_info'].d48_kp[0])+' '+
+                                     'ks='+str(data[r]['sim_info'].d48_ks[0])+' '+
+                                     'ka='+str(data[r]['sim_info'].d48_ka[0])+' '+
+                                     'vd='+str(data[r]['sim_info'].d48_vd[0])+' '+
+                                     'pd='+str(data[r]['sim_info'].d48_pd[0])+' ')
+                      plt.ylabel('Sun pixel position FWHM in stacked frame')
+                      plt.xlabel('Time Elasped (seconds)')
+                      plt.title("Glo sun position cloud width per stacked frame\n"+date+' '+r)
+                      plt.legend(loc='upper left')
+                      plt.ylim((0,10))
+                  except:
+                      continue
+       
+       #Plot GLO pixels centered on mean       
+       if plot_glo_pixel_centered == True:
+              for r in sorted(data):
+                  try:   
+                      #Plot converted GLO pixels and subtract mean
+                      plt.figure(figsize=(20,5))
+                      plt.plot(data[r]['time_laser'],
+                              (data[r]['xpos_glo'])-(data[r]['xpos_glo']).mean(),
+                               label='kp='+str(data[r]['sim_info'].d48_kp[0])+' '+
+                                     'ks='+str(data[r]['sim_info'].d48_ks[0])+' '+
+                                     'ka='+str(data[r]['sim_info'].d48_ka[0])+' '+
+                                     'vd='+str(data[r]['sim_info'].d48_vd[0])+' '+
+                                     'pd='+str(data[r]['sim_info'].d48_pd[0])+' ')
+                      plt.legend(loc='upper left')
+                  except:
+                      continue
+               
+       #Plot GLO pixels centered on mean       
+       if plot_imu_deg_per_sec == True:
+              for r in sorted(data):
+                  plt.figure(figsize=(20,5))
+                  try:
+                       #plt.plot(data[r]['imu_data'].index,data[r]['imu_data'].ang_z*180.0/np.pi,color='red')
+                       plt.plot(data[r]['time_imu_sync'],(data[r]['imu_data'].ang_z*180.0/np.pi).values,'.',color='red',label='IMU deg/sec')
+                       plt.plot(data[r]['time_laser'],data[r]['std_xpos_020'],'.',label='GLO pixel stacked cloud')
+                       plt.grid()
+                       plt.ylim((-2,10))
+                       plt.xlabel('Time (s)')
+                       plt.ylabel('Sun pixel position FWHM in stacked frame')
+                       plt.title("Glo sun position cloud width per stacked frame\n"+date+' '+r)
+                       plt.legend()
+                  except:
+                       continue
+
+       #Plot pixel smear per integration period      
+       if plot_pixel_smear == True:
+              for r in sorted(data):
+                  try:   
+                      #Plot converted GLO pixels and subtract mean
+                      fig4=plt.figure('GLO pixel smear per 1ms integration period '+r,figsize=(20,5))
+                      plt.plot(data[r]['time_laser'],
+                               data[r]['pix_smear'],
+                               '.',
+                               color='black',
+                               label=r+' '+
+                                     'kp='+str(data[r]['sim_info'].d48_kp[0])+' '+
+                                     'ks='+str(data[r]['sim_info'].d48_ks[0])+' '+
+                                     'ka='+str(data[r]['sim_info'].d48_ka[0])+' '+
+                                     'vd='+str(data[r]['sim_info'].d48_vd[0])+' '+
+                                     'pd='+str(data[r]['sim_info'].d48_pd[0])+' ')
+                      plt.plot(data[r]['time_laser'],
+                               data[r]['pix_smear_120'],
+                               color='red')
+                      plt.legend(loc='upper left')
+                  except:
+                      continue
+                
 
 ##calculate the speeds 
 #spd=pd.DataFrame(data=xpos.diff().values/time.diff().values)
