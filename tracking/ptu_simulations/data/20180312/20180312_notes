@@ -1,0 +1,38 @@
+run_0 ebay calibration
+run_1 d48 calibration
+run_2 ism sine wave with position and velocity deaband set to 0.05
+	I suspect the deadband may need to be set much closer to 0 as there
+	is a significant lag in the response to a changing direction
+run_3 ism sine wave with position and velocity deadband set to 0.0
+	much better performance (laser stayed near center of paper, but still
+	significant jitter)
+run_4 accidentally set proportional gain to 200, the d48 just started circling in the
+	pan and tilt axis rapidly (not a good setting)
+run_5 there was a bump at the beginning of the video...not really sure what happend
+run_6 set kp= 10.0, and ka=12.0, moved off page in middle of run
+run_7 set ka=50.0, the jitter increased dramatically, but the mean location
+	of the laser seemed to stay somewhat on the paper
+run_8 set ka=5.0, jitter amplitude decreased significantly, but slow drift off
+	page
+run_9 set ka=1.0, jitter amplitude small, but drifting off the page within
+	a few seconds
+run_10 set ks=0.9, seemed similar to run_9
+run_11 repeated settings from run_3 to see if laser would stay near the 
+	center for the duration, but it moved off the page at a similar rate
+	to the last couple tests...I will try to reset the gyro offsets manually
+	in run_12
+run_12 set the z-axis gyro offset to 0.000 ('sbz0.0000'), but this created
+	a significant drift to the right. I will just try recalibrating the gyros on the
+	next run_13
+run_13 recalibrated gyro, and used same settings as run_3, but laser still 
+	drifted off page relatively quickly
+run_14 ran manual sine wave, seems to be a small scale drift on certain sections
+	of sine wave
+run_15 reran ism sine wave with run_3 settings to show Scott.
+
+run_17 reran manual sine wave to show more people in the hall
+
+runs_19 through 25: cycled through all ism sine waves with 
+	kp=12.0, ks=1.0, ka=12.0, pd=0.0, vd=0.0
+
+I think GOPRO sd card was full after run11, so the majority of these runs only have IMU data :( 

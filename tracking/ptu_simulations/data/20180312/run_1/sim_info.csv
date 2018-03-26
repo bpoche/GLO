@@ -1,0 +1,2 @@
+run,filename,t_start,t_stop,sim_file,d48_kp,d48_ks,d48_ka,d48_vd,d48_pd
+0,/DCIM/100GOPRO/GOPR0301.MP4,2018-03-12 14:29:46.319882,2018-03-12 14:32:39.851668,/home/pi/Desktop/git_repos/GLO/tracking/ptu_simulations/calibrate_angles_ism.csv,16.0,0.5,12.0,0.004,0.004

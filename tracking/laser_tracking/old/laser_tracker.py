@@ -13,7 +13,7 @@ class LaserTracker(object):
 
     def __init__(self,file_loc="",first=0,last=None,delay=.01, cam_width=640, cam_height=480, hue_min=20, hue_max=160,
                  sat_min=100, sat_max=255, val_min=200, val_max=256,
-                 display_thresholds=False,save_data=False,data_loc=None):
+                 display_thresholds=False,save_data=False,data_loc=None,save_images=True):
         """
         * ``cam_width`` x ``cam_height`` -- This should be the size of the
         image coming from the camera. Default is 640x480.
@@ -47,6 +47,7 @@ class LaserTracker(object):
         self.display_thresholds = display_thresholds
         self.save_data = save_data
         self.data_loc = data_loc
+        self.save_images = save_images
         self.capture = None  # camera capture device
         self.channels = {
             'hue': None,
@@ -240,12 +241,12 @@ class LaserTracker(object):
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-        
-        cv2.imwrite(imgfolder+'/'+vid_name+'_'+frame_cnt_str+'.png',frame)
+        if self.save_images==True:
+            cv2.imwrite(imgfolder+'/'+vid_name+'_'+frame_cnt_str+'.png',frame)
         if frame_cnt % 10 == 0:
             cv2.imshow('RGB_VideoFrame', frame)
             cv2.imshow('LaserPointer', self.channels['laser'])
-            if self.display_thresholds:
+            if self.display_thresholds==True:
                 cv2.imshow('Thresholded_HSV_Image', img)
                 cv2.imshow('Hue', self.channels['hue'])
                 cv2.imshow('Saturation', self.channels['saturation'])
@@ -258,7 +259,7 @@ class LaserTracker(object):
         self.create_and_position_window('LaserPointer', 0,400 )
         self.create_and_position_window('RGB_VideoFrame',
                                         0, 400+self.cam_height)
-        if self.display_thresholds:
+        if self.display_thresholds==True:
             self.create_and_position_window('Thresholded_HSV_Image', 10, 10)
             self.create_and_position_window('Hue', 20, 20)
             self.create_and_position_window('Saturation', 30, 30)
@@ -364,9 +365,15 @@ if __name__ == '__main__':
                         default=255,
                         type=int,
                         help='Value Maximum Threshold')
-    parser.add_argument('-d', '--display',
-                        action='store_true',
+    parser.add_argument('-t', '--display',
+                        default='store_true',
                         help='Display Threshold Windows')
+    parser.add_argument('-d', '--data_loc',
+                        default="/tesla/data/ISM_VIDEO/",
+                        help='Display Threshold Windows')
+    parser.add_argument('-i', '--save_data',
+                        default=True,
+                        help='Save every frame as .png')
     params = parser.parse_args()
     
     mp4dir=params.file_loc.rsplit('/',1)[0]
@@ -385,12 +392,12 @@ if __name__ == '__main__':
         val_min=params.valmin,
         val_max=params.valmax,
         display_thresholds=params.display,
-        save_data=True,
-        data_loc=mp4dir,   #'C:/git_repos/GLO/tracking/ISM_testing/data/'
+        save_data=params.save_data,
+        data_loc=params.data_loc,   #'C:/git_repos/GLO/tracking/ISM_testing/data/'
     )
     
     # Get list of mp4 dir
-    mp4list=glob.glob(mp4dir+'/'+'GOPR*.MP4')
+    mp4list=glob.glob(params.data_loc+'/'+'GOPR*.MP4')
     mp4list.sort()
     
     for tfile in mp4list:
@@ -413,8 +420,8 @@ if __name__ == '__main__':
                     val_min=params.valmin,
                     val_max=params.valmax,
                     display_thresholds=params.display,
-                    save_data=True,
-                    data_loc=mp4dir,   #'C:/git_repos/GLO/tracking/ISM_testing/data/'
+                    save_data=params.save_data,
+                    data_loc=params.data_loc,   #'C:/git_repos/GLO/tracking/ISM_testing/data/'
                     )
             data = tracker.run()
         else:

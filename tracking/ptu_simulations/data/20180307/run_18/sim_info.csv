@@ -1,0 +1,2 @@
+run,filename,t_start,t_stop,sim_file,d48_kp,d48_ks,d48_ka,d48_vd,d48_pd
+0,,2018-03-06 23:59:02.595107,,/home/pi/Desktop/git_repos/GLO/tracking/ptu_simulations/fast2.csv,16.0,0.5,12.0,0.004,0.004

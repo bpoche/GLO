@@ -1,0 +1,8 @@
+Entire PTU stack was mounted on top of swivel chair bracket
+
+run0: GOPR0312.MP4 PTUD48 calibration run
+run1: GOPR0313.MP4 good
+run2: GOPR0314.MP4 bad
+run3: GOPR0315.MP4 good
+run4: GOPR0316.MP4 good
+run5: GOPR0317.MP4 good 

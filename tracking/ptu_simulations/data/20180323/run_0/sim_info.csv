@@ -1,0 +1,2 @@
+run,filename,t_start,t_stop,sim_file,d48_kp,d48_ks,d48_ka,d48_vd,d48_pd
+0,/DCIM/100GOPRO/GOPR0333.MP4,2018-03-23 15:25:12.921368,2018-03-23 15:27:05.443612,/home/pi/Desktop/git_repos/GLO/tracking/ptu_simulations/speed_bins_sim.csv,5.0,1.0,1e-06,0.0,0.0
