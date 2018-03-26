@@ -120,15 +120,19 @@ def load_data(date='20180323',runs='all'):
 
 if __name__ == '__main__':
        #Pick date to plot
-       date='20180323'
+       date='20180322'
        runs='all'
        data = load_data(date=date,runs=runs)
+       
+       delay_cmd_list=5.62
+       delay_imu_data=2.2
        
        #Select which plots to show
        plot_stacked_cloud = False
        plot_glo_pixel_centered = False
        plot_imu_deg_per_sec = False
-       plot_pixel_smear = True
+       plot_pixel_smear = False
+       plot_binned_imu_chair = False
        
        #Plot sun position cloud per stacked frame
        if plot_stacked_cloud == True:          
@@ -136,7 +140,7 @@ if __name__ == '__main__':
                   try:   
                       plt.figure(figsize=(20,5))
                       plt.plot(data[r]['time_laser'],
-                               data[r]['std_xpos_020'],
+                               3*data[r]['std_xpos_020'],
                                color='black',
                                marker='.',
                                linestyle="None",
@@ -149,7 +153,9 @@ if __name__ == '__main__':
                       plt.xlabel('Time Elasped (seconds)')
                       plt.title("Glo sun position cloud width per stacked frame\n"+date+' '+r)
                       plt.legend(loc='upper left')
-                      plt.ylim((0,10))
+                      plt.ylim((0,30))
+                      for i in range(len(data[r]['cmd_list'].index)):
+                             plt.axvline(x=data[r]['cmd_list']['delay'][i]+delay_cmd_list,color='red')
                   except:
                       continue
        
@@ -193,6 +199,52 @@ if __name__ == '__main__':
                   try:   
                       #Plot converted GLO pixels and subtract mean
                       fig4=plt.figure('GLO pixel smear per 1ms integration period '+r,figsize=(20,5))
+                      plt.plot(data[r]['time_laser'],
+                               data[r]['pix_smear'],
+                               '.',
+                               color='black',
+                               label=r+' '+
+                                     'kp='+str(data[r]['sim_info'].d48_kp[0])+' '+
+                                     'ks='+str(data[r]['sim_info'].d48_ks[0])+' '+
+                                     'ka='+str(data[r]['sim_info'].d48_ka[0])+' '+
+                                     'vd='+str(data[r]['sim_info'].d48_vd[0])+' '+
+                                     'pd='+str(data[r]['sim_info'].d48_pd[0])+' ')
+                      plt.plot(data[r]['time_laser'],
+                               data[r]['pix_smear_120'],
+                               color='red')
+                      plt.legend(loc='upper left')
+                  except:
+                      continue
+               
+       #Plot pixel cloud for binned imu speed values when ptu stack was mounted on chair      
+       if plot_binned_imu_chair == True:
+              for r in sorted(data):
+                  data[r]['imu_data']['pan_dps']=data[r]['imu_data']['ang_z']*180.0/np.pi
+                  ds=0.1
+                  max_spd=2.0
+                  speeds=np.linspace(0,max_spd,np.int(np.ceil(max_spd/ds))+1)
+                  speed_bins={}
+                  speed_bins['speeds']=np.linspace(0,max_spd,np.int(np.ceil(max_spd/ds))+1)
+                  speed_bins['std']=np.zeros(len(speeds))
+                  speed_bins['std']=[]
+                  for i in range(len(speeds)-1):
+                         speed_bins['mask_'+str(i)] = (data[r]['imu_data']['pan_dps'] > speeds[i]) & ((data[r]['imu_data']['pan_dps'] <= speeds[i+1]))
+                         speed_bins['std'].append(data[r]['imu_data'].loc[speed_bins['mask_'+str(i)],'pan_dps'].std())
+                         speed_bins['count'].append(data[r]['imu_data'].loc[speed_bins['mask_'+str(i)],'pan_dps'].count())
+                         #speed_bins['std'][i+1]=data[r]['imu_data']['pan_dps'].loc(speed_bins['mask_'+str(i)],'pan_dps').std()
+#                  speed_bin0=(data[r]['imu_data']['pan_dps'] > 0*ds) & ((data[r]['imu_data']['pan_dps'] <= 1*ds))
+#                  speed_bin1=(data[r]['imu_data']['pan_dps'] > 1*ds) & ((data[r]['imu_data']['pan_dps'] <= 2*ds))
+#                  speed_bin2=(data[r]['imu_data']['pan_dps'] > 2*ds) & ((data[r]['imu_data']['pan_dps'] <= 3*ds))
+#                  speed_bin3=(data[r]['imu_data']['pan_dps'] > 3*ds) & ((data[r]['imu_data']['pan_dps'] <= 4*ds))
+#                  speed_bin4=(data[r]['imu_data']['pan_dps'] > 4*ds) & ((data[r]['imu_data']['pan_dps'] <= 5*ds))
+#                  speed_bin5=(data[r]['imu_data']['pan_dps'] > 5*ds) & ((data[r]['imu_data']['pan_dps'] <= 6*ds))
+#                  speed_bin6=(data[r]['imu_data']['pan_dps'] > 6*ds) & ((data[r]['imu_data']['pan_dps'] <= 7*ds))
+#                  speed_bin7=(data[r]['imu_data']['pan_dps'] > 7*ds) & ((data[r]['imu_data']['pan_dps'] <= 8*ds))
+#                  speed_bin8=(data[r]['imu_data']['pan_dps'] > 8*ds) & ((data[r]['imu_data']['pan_dps'] <= 9*ds))
+#                  speed_bin9=(data[r]['imu_data']['pan_dps'] > 9*ds) & ((data[r]['imu_data']['pan_dps'] <= 10*ds))
+                  try:   
+                      #Plot converted GLO pixels and subtract mean
+                      fig4=plt.figure('IMU data binned '+r,figsize=(20,5))
                       plt.plot(data[r]['time_laser'],
                                data[r]['pix_smear'],
                                '.',
