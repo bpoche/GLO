@@ -25,7 +25,7 @@ color1='black'
 color2='red'
 
 #approximate timing of simulation start
-t0=8.5
+t0=8.5 
 
 #plotting limits
 ylim_raw=(0,200)
