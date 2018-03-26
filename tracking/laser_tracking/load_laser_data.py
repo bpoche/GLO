@@ -84,6 +84,11 @@ def load_data(date='20180323',runs='all'):
             #just assume 0.6 degrees across entire 1280 pixels
             med_dpp=0.6/1280.0
             
+            #Set delays between gopro, imu, and ptu
+            #Gopro starts first, so define delays for imu data and ptu commands to start
+            delay_imu=2.2
+            delay_ptu=5.62
+            
             try:
                 #Extract time_laser and time_imu_sync to plot laser and imu data together
                 data[r]['time_laser']=data[r]['laser_data'].time_elapsed.to_frame()/1e3
@@ -112,7 +117,36 @@ def load_data(date='20180323',runs='all'):
                 data[r]['pix_smear']=data[r]['xpos_glo'].diff().values/data[r]['time_laser'].diff().values/1e3
                 data[r]['pix_smear_120']=pd.DataFrame(data[r]['pix_smear']).rolling(120,center=True).std()
 
-
+                #Combine laser data and imu data into single dataframe
+                data[r]['imu_laser']=pd.DataFrame(index=data[r]['imu_data'].index[0]+
+                                                        pd.to_timedelta(data[r]['laser_data']['time_elapsed'].values,'ms')+
+                                                        pd.to_timedelta(-delay_imu,'s'))
+                data[r]['imu_laser']['xpos_gopro']=data[r]['laser_data'].laser_cen_x.values
+                data[r]['imu_laser']['ypos_gopro']=data[r]['laser_data'].laser_cen_y.values
+                data[r]['imu_laser']['xpos_deg']=data[r]['laser_data'].laser_cen_x.values*med_dpp
+                data[r]['imu_laser']['ypos_deg']=data[r]['laser_data'].laser_cen_y.values*med_dpp
+                data[r]['imu_laser']['xpos_glo']=data[r]['imu_laser']['xpos_deg']/glo_dpp
+                data[r]['imu_laser']['ypos_glo']=data[r]['imu_laser']['ypos_deg']/glo_dpp
+                data[r]['imu_laser']['time_elapsed']=data[r]['laser_data']['time_elapsed'].values
+                #Resample laser data and IMU data onto evenly spaced (120 FPS ~ 8.333ms) time intervals
+                data[r]['imu_laser']=pd.concat([data[r]['imu_laser'].resample('8333us').fillna(method = 'ffill'),
+                                                data[r]['imu_data'].resample('8333us').fillna(method = 'ffill')],
+                                                 axis=1)
+                #Use z-axis angular rate as approximation for base speed (IMU was not exactly centered on z-axis)
+                data[r]['imu_laser']['base_spd']=data[r]['imu_laser']['ang_z']*180.0/np.pi
+                
+                #Bin IMU data into speed bins
+                ds=0.1
+                max_spd=2.0
+                speeds=np.linspace(0,max_spd,np.int(np.ceil(max_spd/ds))+1)
+                data[r]['speed_bins']={}
+                data[r]['speed_bins']['speeds']=np.linspace(0,max_spd,np.int(np.ceil(max_spd/ds))+1)
+                data[r]['speed_bins']['std']=np.zeros(len(speeds))
+                data[r]['speed_bins']['std']=[]
+                for i in range(len(speeds)-1):
+                       data[r]['speed_bins']['mask_'+str(i)] = (data[r]['imu_laser']['base_spd'] > speeds[i]) & ((data[r]['imu_laser']['base_spd'] <= speeds[i+1]))
+                       data[r]['speed_bins']['std'].append(data[r]['imu_laser'].loc[data[r]['speed_bins']['mask_'+str(i)],'xpos_glo'].std())
+                       
             except:
                 print('could not extract data '+date +' '+ r)
                 continue
@@ -133,6 +167,8 @@ if __name__ == '__main__':
        plot_imu_deg_per_sec = False
        plot_pixel_smear = False
        plot_binned_imu_chair = False
+       plot_base_speed_chair_test = False
+       plot_laser_imu_speed_bin = True
        
        #Plot sun position cloud per stacked frame
        if plot_stacked_cloud == True:          
@@ -228,20 +264,11 @@ if __name__ == '__main__':
                   speed_bins['std']=np.zeros(len(speeds))
                   speed_bins['std']=[]
                   for i in range(len(speeds)-1):
-                         speed_bins['mask_'+str(i)] = (data[r]['imu_data']['pan_dps'] > speeds[i]) & ((data[r]['imu_data']['pan_dps'] <= speeds[i+1]))
-                         speed_bins['std'].append(data[r]['imu_data'].loc[speed_bins['mask_'+str(i)],'pan_dps'].std())
-                         speed_bins['count'].append(data[r]['imu_data'].loc[speed_bins['mask_'+str(i)],'pan_dps'].count())
+                         speed_bins['mask_'+str(i)] = (data[r]['imu_laser']['base_spd'] > speeds[i]) & ((data[r]['imu_laser']['base_spd'] <= speeds[i+1]))
+                         speed_bins['std'].append(data[r]['imu_laser'].loc[speed_bins['mask_'+str(i)],'xpos_glo'].std())
+                         #speed_bins['count'].append(data[r]['imu_data'].loc[speed_bins['mask_'+str(i)],'pan_dps'].count())
                          #speed_bins['std'][i+1]=data[r]['imu_data']['pan_dps'].loc(speed_bins['mask_'+str(i)],'pan_dps').std()
-#                  speed_bin0=(data[r]['imu_data']['pan_dps'] > 0*ds) & ((data[r]['imu_data']['pan_dps'] <= 1*ds))
-#                  speed_bin1=(data[r]['imu_data']['pan_dps'] > 1*ds) & ((data[r]['imu_data']['pan_dps'] <= 2*ds))
-#                  speed_bin2=(data[r]['imu_data']['pan_dps'] > 2*ds) & ((data[r]['imu_data']['pan_dps'] <= 3*ds))
-#                  speed_bin3=(data[r]['imu_data']['pan_dps'] > 3*ds) & ((data[r]['imu_data']['pan_dps'] <= 4*ds))
-#                  speed_bin4=(data[r]['imu_data']['pan_dps'] > 4*ds) & ((data[r]['imu_data']['pan_dps'] <= 5*ds))
-#                  speed_bin5=(data[r]['imu_data']['pan_dps'] > 5*ds) & ((data[r]['imu_data']['pan_dps'] <= 6*ds))
-#                  speed_bin6=(data[r]['imu_data']['pan_dps'] > 6*ds) & ((data[r]['imu_data']['pan_dps'] <= 7*ds))
-#                  speed_bin7=(data[r]['imu_data']['pan_dps'] > 7*ds) & ((data[r]['imu_data']['pan_dps'] <= 8*ds))
-#                  speed_bin8=(data[r]['imu_data']['pan_dps'] > 8*ds) & ((data[r]['imu_data']['pan_dps'] <= 9*ds))
-#                  speed_bin9=(data[r]['imu_data']['pan_dps'] > 9*ds) & ((data[r]['imu_data']['pan_dps'] <= 10*ds))
+
                   try:   
                       #Plot converted GLO pixels and subtract mean
                       fig4=plt.figure('IMU data binned '+r,figsize=(20,5))
@@ -259,6 +286,43 @@ if __name__ == '__main__':
                                data[r]['pix_smear_120'],
                                color='red')
                       plt.legend(loc='upper left')
+                  except:
+                      continue
+       
+       if plot_base_speed_chair_test == True:        
+              for r in sorted(data):
+                  try:   
+                      #Plot base speed (deg/sec) from chair test
+                      plt.figure('Base Unit Speed (imu 10hz data upsampled to 120hz timescale)',figsize=(20,5))
+                      plt.plot(data[r]['imu_laser']['base_unit_speed'],
+                               label='kp='+str(data[r]['sim_info'].d48_kp[0])+' '+
+                                     'ks='+str(data[r]['sim_info'].d48_ks[0])+' '+
+                                     'ka='+str(data[r]['sim_info'].d48_ka[0])+' '+
+                                     'vd='+str(data[r]['sim_info'].d48_vd[0])+' '+
+                                     'pd='+str(data[r]['sim_info'].d48_pd[0])+' ')
+                      plt.legend(loc='upper left')
+                      plt.xlabel('Time')
+                      plt.ylabel('Base Unit Speed (deg/sec)')
+                  except:
+                      continue
+               
+       if plot_laser_imu_speed_bin == True:            
+              for r in sorted(data):
+                  try:   
+                      #Plot base speed (deg/sec) from chair test
+                      #plt.figure('Base Unit Speed (imu 10hz data upsampled to 120hz timescale)',figsize=(20,5))
+                      plt.figure(figsize=(20,5))
+                      plt.plot(data[r]['imu_laser'].loc[data[r]['speed_bins']['mask_1'],'time_elapsed']/1.0e3,
+                               data[r]['imu_laser'].loc[data[r]['speed_bins']['mask_1'],'xpos_glo'],
+                               '.',
+                               label='kp='+str(data[r]['sim_info'].d48_kp[0])+' '+
+                                     'ks='+str(data[r]['sim_info'].d48_ks[0])+' '+
+                                     'ka='+str(data[r]['sim_info'].d48_ka[0])+' '+
+                                     'vd='+str(data[r]['sim_info'].d48_vd[0])+' '+
+                                     'pd='+str(data[r]['sim_info'].d48_pd[0])+' ')
+                      plt.legend(loc='upper left')
+                      plt.xlabel('Time')
+                      plt.ylabel('GLO pixel equivalent')
                   except:
                       continue
                 
