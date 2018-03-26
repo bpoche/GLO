@@ -9,72 +9,70 @@ Created on Tue Feb 27 11:04:13 2018
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import pdb
 
 
-#Determine the scale by looking at the slope of the 1 pos/sec video
-vid_name='GOPR0123'
-vid_dir='/tesla/data/ISM_VIDEO/'
+b=calibrate_video_coordinates(vid_name='GOPR0276')
 
-data=pd.read_csv(vid_dir+vid_name+'.csv')
 
-time=data.time_elapsed.to_frame()/1e3
-
-#1 second smooth to remove stair step
-rm=data.laser_cen_x.to_frame().rolling(120,center=True).mean()
-
-#plt.figure(1)
-#plt.plot(time,data.laser_cen_x,'x',color='black')
-#plt.plot(time,rm,'-+',color='blue')
-
-dif_pos=rm.diff().values
-dif_time=time.diff().values
-
-#angular rate in GOPRO pixels per second
-deriv=dif_pos/(dif_time)
-
-#PTU angular rate in degrees per second
-ptu_rate=-23.14285/60/60
-
-#degrees per pixel
-dpp=ptu_rate/deriv
-med_dpp=np.nanmedian(dpp)
-
-xpos=data.laser_cen_x.to_frame()*med_dpp
-time=data.time_elapsed.to_frame()/1e3
-
-plt.figure(1,clear=True)
-plt.plot(time,xpos)
-#plt.figure(2)
-#plt.plot(time,dpp,color='blue')
-#plt.plot([0,80],[med_dpp,med_dpp],color='red')
 
 #open another video to analyze using the scale above
-vid_name='GOPR0117'
+vid_name='GOPR0279'
 vid_dir='/tesla/data/ISM_VIDEO/'
+
+clear_val=False
+color1='black'
+color2='red'
+
+#approximate timing of simulation start
+t0=8.5
+
+#plotting limits
+ylim_raw=(0,200)
+xlim=(0,35)
+
+ylim_stack=(0,15)
+ylim_int=(-1,1)
 
 data=pd.read_csv(vid_dir+vid_name+'.csv')
 
-xpos=data.laser_cen_x.to_frame()*med_dpp
-time=data.time_elapsed.to_frame()/1e3
+#get pixel values of laser dot
+xpix=data.laser_cen_x.values
+ypix=data.laser_cen_y.values
 
-plt.figure("Raw GLO relative pixel position for ISM errors",clear=True,)
-plt.plot(time,xpos/2.5e-3,marker='.',markersize=1,color='black',
+#convert to angles using calibration map
+x_ang, y_ang = evaluate_coordinates(b,xpix,ypix)
+
+xpos=pd.DataFrame(x_ang)
+ypos=pd.DataFrame(y_ang)
+
+time=data.time_elapsed.to_frame()/1e3-t0
+
+raw_fig=plt.figure("Raw GLO relative pixel position for ISM errors",clear=clear_val)
+plt.plot(time,xpos/2.5e-3,marker='.',markersize=1,color=color1,
          linestyle="None")
+#plt.plot(time,ypos/2.5e-3,marker='.',markersize=1,color=color2,
+#         linestyle="None")
 plt.xlabel('Time (s)')
 plt.ylabel('Pixel')
-plt.grid()
+plt.grid(True)
+plt.xlim(xlim)
+plt.ylim(ylim_raw)
+raw_fig.savefig('raw_pixel_pos_comparison.png')
 
 std_xpos_120=xpos.rolling(120,center=True).std()
 std_xpos_020=xpos.rolling(20,center=True).std()
 
-fig3=plt.figure("Glo sun position cloud width per stacked frame",clear=True)
+stack_fig=plt.figure("Glo sun position cloud width per stacked frame",clear=clear_val)
 #plt3=plt.plot(time,std_xpos_120,color='black')
-plt3=plt.plot(time,std_xpos_020*2e0/2.5e-3,color='black',marker='.',
+plt3=plt.plot(time,std_xpos_020*2e0/2.5e-3,color=color1,marker='.',
               markersize=1,linestyle="None")
-plt.grid()
-#plt.ylim(-1,1)
+plt.grid(True)
 plt.xlabel('Time (s)')
 plt.ylabel('Sun pixel position FWHM in stacked frame')
+plt.xlim(xlim)
+plt.ylim(ylim_stack)
+stack_fig.savefig('stack_variance_comparison.png')
 
 
 #calculate the speeds 
@@ -82,12 +80,17 @@ spd=pd.DataFrame(data=xpos.diff().values/time.diff().values)
 
 pix_smear=spd*1e-3/2.5e-3
 
-fig4=plt.figure('GLO pixel smear per 1ms integration period',clear=True)
-plt.plot(time,pix_smear,marker='.',markersize=1,linestyle="None",color="black")
+int_fig=plt.figure('GLO pixel smear per 1ms integration period',clear=clear_val)
+plt.plot(time,pix_smear,marker='.',markersize=1,linestyle="None",color=color1)
 
 std_spd_120=pix_smear.rolling(120,center=True).std()
-plt.plot(time,std_spd_120,color='red')
-plt.grid()
-plt.ylim(-1,1)
+plt.plot(time,std_spd_120,color=color2)
+plt.grid(True)
+plt.ylim(ylim_int)
+plt.xlim(xlim)
 plt.xlabel('Time (s)')
 plt.ylabel('Pixels Per Integration Period')
+int_fig.savefig('single_integration_smear_comparison.png')
+
+
+
